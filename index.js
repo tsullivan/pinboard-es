@@ -1,11 +1,12 @@
-var rp = require('request-promise')
+var request = require('request')
 var parseString = require('xml2js').parseString;
 var args = process.argv.slice(2);
 
 if (Array.isArray(args) && args.length === 1) {
   var auth = args[0];
 } else {
-  console.err('Usage: node index.js authuser:authtoken');
+  console.error('Usage: node index.js authuser:authtoken');
+  process.exit();
 }
 
 
@@ -15,14 +16,21 @@ var options = {
     auth_token: auth
   },
   headers: {
-    'User-Agent': 'Request-Promise'
+    'User-Agent': 'Request'
   }
 };
 
-rp(options)
-  .then(function (xml) {
-    parseString(xml, function (err, result) {
-      if (err) console.err('Error!', err);
-      console.log(JSON.stringify(result));
-    });
+request(options, function (err, response) {
+  if (err) {
+    return console.error('Request Error!', err);
+  }
+
+  parseString(response.body, function (err, result) {
+    if (err) {
+      console.dir(response.body);
+      return console.error('Parse Error!', err);
+    }
+
+    console.log('Success!', JSON.stringify(result));
   });
+});

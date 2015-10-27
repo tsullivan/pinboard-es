@@ -9,7 +9,7 @@
   "author": "Timothy Sullivan",
   "license": "ISC",
   "dependencies": {
-    "request-promise": "^1.0.2",
+    "request": "^2.65.0",
     "xml2js": "^0.4.13"
   }
 }
