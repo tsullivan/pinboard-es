@@ -3,6 +3,7 @@ var request = require('request')
 var parseString = require('xml2js').parseString;
 var elasticsearch = require('elasticsearch');
 var program = require('commander');
+var colors = require('colors/safe');
 
 var updateCount = 25;
 
@@ -39,7 +40,7 @@ var options = {
 
 request(options, function (err, response) {
   if (err) {
-    return console.error('Request Error!', err);
+    return console.error(colors.red('Request Error!\n'), err);
   }
 
   parseString(response.body, function (err, result) {
@@ -47,7 +48,5 @@ request(options, function (err, response) {
       console.dir(response.body);
       return console.error('Parse Error!', err);
     }
-
-    console.log('Success!', JSON.stringify(result));
   });
 });
