@@ -9,6 +9,8 @@
   "author": "Timothy Sullivan",
   "license": "ISC",
   "dependencies": {
+    "commander": "^2.9.0",
+    "elasticsearch": "^8.2.0",
     "request": "^2.65.0",
     "xml2js": "^0.4.13"
   }

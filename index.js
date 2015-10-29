@@ -1,19 +1,36 @@
+var thePackage = require('./package');
 var request = require('request')
 var parseString = require('xml2js').parseString;
-var args = process.argv.slice(2);
+var elasticsearch = require('elasticsearch');
+var program = require('commander');
 
-if (Array.isArray(args) && args.length === 1) {
-  var auth = args[0];
-} else {
-  console.error('Usage: node index.js authuser:authtoken');
+var updateCount = 25;
+
+program
+  .version(thePackage.version)
+  .option('--auth <auth>', 'Pinboard auth, e.g: <pinboardauthuser:pinboardauthtoken>')
+  .option('--index <endpoint>', 'ES endpoint with index name, e.g: http://shielduser:shieldpass@localhost:9200/pinboard')
+  .option('--init', 'Fetch all the pinboard posts')
+  .option('--update', 'Fetch only the last ' + updateCount)
+  .parse(process.argv);
+  
+if (!(program.auth && program.index)) {
+  program.outputHelp();
   process.exit();
 }
 
+var uri = 'https://api.pinboard.in/v1/posts/';
+if (program.init) {
+  uri += 'all';
+} else {
+  uri += 'recent';
+}
 
 var options = {
-  uri: 'https://api.pinboard.in/v1/posts/all',
+  uri: uri,
   qs: {
-    auth_token: auth
+    auth_token: program.auth,
+    count: program.update ? updateCount : undefined
   },
   headers: {
     'User-Agent': 'Request'
