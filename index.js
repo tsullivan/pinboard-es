@@ -1,5 +1,6 @@
 var thePackage = require('./package');
 var request = require('request')
+var _ = require('lodash')
 var parseString = require('xml2js').parseString;
 var elasticsearch = require('elasticsearch');
 var program = require('commander');
@@ -44,9 +45,63 @@ request(options, function (err, response) {
   }
 
   parseString(response.body, function (err, result) {
-    if (err) {
-      console.dir(response.body);
-      return console.error('Parse Error!', err);
+    var posts = _.get(result, 'posts.post');
+
+    if (err || !posts) {
+      return console.error(colors.red('Parse Error!\n'), err || 'posts: ' + posts);
     }
+
+    // success!
+
+    var indexSplit = program.index.match(/^(.*)(\/)(\w+)$/);
+    var host = indexSplit[1];
+    var index = indexSplit[3];
+
+    // client instance
+    var client = new elasticsearch.Client({
+      apiVersion: '2.0',
+      host: host,
+      log: 'trace'
+    });
+
+    // create mapping
+    client.indices.putMapping({
+      pinboard: {
+        properties: {
+          href: { type: 'string', index: 'not_analyzed' },
+          time: { type: 'date' },
+          description: { type: 'string', index: 'analyzed', analyzer: 'english' },
+          extended: { type: 'string', index: 'analyzed', analyzer: 'english' },
+          lastFetched: { type: 'date' }
+        }
+      }
+    });
+
+    // parse result body into docs
+    var lastFetched = new Date(result.posts.$.dt);
+    var body = result.posts.post.map(function (doc) {
+      return doc.$;
+    }).map(function (doc) {
+      return {
+        id: doc.hash,
+        href: doc.href,
+        time: new Date(doc.time),
+        description: doc.description,
+        extended: doc.extended,
+        tags: doc.tag.split(' '),
+        lastFetched: lastFetched
+      };
+    });
+    body = _.flatten(body.map(function (doc) {
+      return [ { index: { _id: doc.id }}, doc ];
+    }));
+
+    // bulk-index the docs
+    client.bulk({
+      index: index,
+      type: 'pinboard',
+      body: body
+    });
+
   });
 });
