@@ -7,6 +7,7 @@ var program = require('commander');
 var colors = require('colors/safe');
 
 var updateCount = 25;
+var docType = 'pinboard-posts'
 
 program
   .version(thePackage.version)
@@ -39,6 +40,60 @@ var options = {
   }
 };
 
+
+function createDocumentsBody(result) {
+  // parse result body into docs
+  var lastFetched = new Date(result.posts.$.dt);
+  var body = result.posts.post.map(function (doc) {
+    return doc.$;
+  }).map(function (doc) {
+    return {
+      href: doc.href,
+      time: new Date(doc.time),
+      description: doc.description,
+      extended: doc.extended,
+      tags: doc.tag.split(' '),
+      lastFetched: lastFetched
+    };
+  });
+
+  return _.flatten(body.map(function (doc) {
+    return [ { index: { _id: doc.id }}, doc ];
+  }));
+}
+
+function createClient(host) {
+  return new elasticsearch.Client({
+    apiVersion: '2.0',
+    host: host,
+    log: 'trace'
+  });
+}
+
+function createMapping(client) {
+  var mappingBody = {};
+  mappingBody[docType] = {
+    properties: {
+      href: { type: 'string', index: 'not_analyzed' },
+      time: { type: 'date' },
+      lastFetched: { type: 'date' }
+    }
+  };
+  return client.indices.putMapping({
+    index: '*',
+    type: docType,
+    body: mappingBody
+  });
+}
+
+function bulkIndex(client, index, body) {
+  return client.bulk({
+    index: index,
+    type: docType,
+    body: body
+  });
+}
+
 request(options, function (err, response) {
   if (err) {
     return console.error(colors.red('Request Error!\n'), err);
@@ -52,56 +107,21 @@ request(options, function (err, response) {
     }
 
     // success!
-
     var indexSplit = program.index.match(/^(.*)(\/)(\w+)$/);
     var host = indexSplit[1];
     var index = indexSplit[3];
+    var client = createClient(host);
 
-    // client instance
-    var client = new elasticsearch.Client({
-      apiVersion: '2.0',
-      host: host,
-      log: 'trace'
-    });
+    function bulk () {
+      bulkIndex(client, index, createDocumentsBody(result)).then(function (result) {
+        console.log(colors.green('Success!\n'));
+      });
+    }
 
-    // create mapping
-    client.indices.putMapping({
-      pinboard: {
-        properties: {
-          href: { type: 'string', index: 'not_analyzed' },
-          time: { type: 'date' },
-          description: { type: 'string', index: 'analyzed', analyzer: 'english' },
-          extended: { type: 'string', index: 'analyzed', analyzer: 'english' },
-          lastFetched: { type: 'date' }
-        }
-      }
-    });
-
-    // parse result body into docs
-    var lastFetched = new Date(result.posts.$.dt);
-    var body = result.posts.post.map(function (doc) {
-      return doc.$;
-    }).map(function (doc) {
-      return {
-        id: doc.hash,
-        href: doc.href,
-        time: new Date(doc.time),
-        description: doc.description,
-        extended: doc.extended,
-        tags: doc.tag.split(' '),
-        lastFetched: lastFetched
-      };
-    });
-    body = _.flatten(body.map(function (doc) {
-      return [ { index: { _id: doc.id }}, doc ];
-    }));
-
-    // bulk-index the docs
-    client.bulk({
-      index: index,
-      type: 'pinboard',
-      body: body
-    });
-
+    if (program.init) {
+      createMapping(client).then(bulk);
+    } else {
+      bulk();
+    }
   });
 });
