@@ -1,7 +1,8 @@
 var thePackage = require('./package');
-var request = require('request')
+var rp = require('request-promise')
 var _ = require('lodash')
-var parseString = require('xml2js').parseString;
+var Promise = require('bluebird');
+var parseXmlString = Promise.promisify(require('xml2js').parseString);
 var elasticsearch = require('elasticsearch');
 var program = require('commander');
 var colors = require('colors/safe');
@@ -39,7 +40,6 @@ var options = {
     'User-Agent': 'Request'
   }
 };
-
 
 function createDocumentsBody(result) {
   // parse result body into docs
@@ -93,19 +93,11 @@ function bulkIndex(client, index, body) {
   });
 }
 
-request(options, function (err, response) {
-  if (err) {
-    return console.error(colors.red('Request Error!\n'), err);
-  }
-
-  parseString(response.body, function (err, result) {
+rp(options).then(function (response) {
+  parseXmlString(response).then(function (result) {
+    response;
+    debugger;
     var posts = _.get(result, 'posts.post');
-
-    if (err || !posts) {
-      return console.error(colors.red('Parse Error!\n'), err || 'posts: ' + posts);
-    }
-
-    // success!
     var indexSplit = program.index.match(/^(.*)(\/)(\w+)$/);
     var host = indexSplit[1];
     var index = indexSplit[3];
@@ -122,5 +114,11 @@ request(options, function (err, response) {
     } else {
       bulk();
     }
+  })
+  .catch(function (err) {
+    return console.error(colors.red('Parse Error!\n'), err);
   });
+})
+.catch(function (err) {
+  return console.error(colors.red('Request Error!\n'), err);
 });
