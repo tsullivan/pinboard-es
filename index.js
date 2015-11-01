@@ -23,6 +23,17 @@ if (!(program.auth && program.index)) {
   process.exit();
 }
 
+var indexSplit = program.index.match(/^(.*)(\/)(\w+)$/);
+if (_.isNull(indexSplit)) {
+  console.error(colors.red(
+    'Invalid format for the index param!\n' +
+    'Format is: http://shielduser:shieldpass@localhost:9200/pinboard'
+  ));
+  process.exit();
+}
+var hostParam = indexSplit[1];
+var indexParam = indexSplit[3];
+
 var uri = 'https://api.pinboard.in/v1/posts/';
 if (program.init) {
   uri += 'all';
@@ -62,10 +73,10 @@ function createDocumentsBody(result) {
   }));
 }
 
-function createClient(host) {
+function createClient() {
   return new elasticsearch.Client({
     apiVersion: '2.0',
-    host: host // , log: 'trace'
+    host: hostParam // , log: 'trace'
   });
 }
 
@@ -85,9 +96,9 @@ function createMapping(client) {
   });
 }
 
-function bulkIndex(client, index, body) {
+function bulkIndex(client, body) {
   return client.bulk({
-    index: index,
+    index: indexParam,
     type: docType,
     body: body
   });
@@ -98,13 +109,10 @@ rp(options)
   parseXmlString(response)
   .then(function (result) {
     var posts = _.get(result, 'posts.post');
-    var indexSplit = program.index.match(/^(.*)(\/)(\w+)$/);
-    var host = indexSplit[1];
-    var index = indexSplit[3];
-    var client = createClient(host);
+    var client = createClient();
 
     function bulk () {
-      bulkIndex(client, index, createDocumentsBody(result))
+      bulkIndex(client, createDocumentsBody(result))
       .then(function (result) {
         console.log(colors.green('Success!'));
       })
