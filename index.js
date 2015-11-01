@@ -93,8 +93,10 @@ function bulkIndex(client, index, body) {
   });
 }
 
-rp(options).then(function (response) {
-  parseXmlString(response).then(function (result) {
+rp(options)
+.then(function (response) {
+  parseXmlString(response)
+  .then(function (result) {
     response;
     debugger;
     var posts = _.get(result, 'posts.post');
@@ -104,13 +106,21 @@ rp(options).then(function (response) {
     var client = createClient(host);
 
     function bulk () {
-      bulkIndex(client, index, createDocumentsBody(result)).then(function (result) {
-        console.log(colors.green('Success!\n'));
+      bulkIndex(client, index, createDocumentsBody(result))
+      .then(function (result) {
+        console.log(colors.green('Success!'));
+      })
+      .catch(function (err) {
+        console.error(colors.red('Failure for bulk index!\n', err));
       });
     }
 
     if (program.init) {
-      createMapping(client).then(bulk);
+      createMapping(client)
+      .then(bulk)
+      .catch(function (err) {
+        console.error(colors.red('Failure for creating the mapping!\n', err));
+      })
     } else {
       bulk();
     }
