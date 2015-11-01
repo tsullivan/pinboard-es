@@ -17,7 +17,7 @@ program
   .option('--init', 'Fetch all the pinboard posts')
   .option('--update', 'Fetch only the last ' + updateCount)
   .parse(process.argv);
-  
+
 if (!(program.auth && program.index)) {
   program.outputHelp();
   process.exit();
@@ -97,8 +97,6 @@ rp(options)
 .then(function (response) {
   parseXmlString(response)
   .then(function (result) {
-    response;
-    debugger;
     var posts = _.get(result, 'posts.post');
     var indexSplit = program.index.match(/^(.*)(\/)(\w+)$/);
     var host = indexSplit[1];
