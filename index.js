@@ -80,7 +80,17 @@ function createClient() {
   });
 }
 
-function createMapping(client) {
+function putSettings(client) {
+  return client.indices.putSettings({
+    index: programIndexName,
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    }
+  });
+}
+
+function putMapping(client) {
   var mappingBody = {};
   mappingBody[programTypeName] = {
     properties: {
@@ -122,11 +132,17 @@ rp(options)
     }
 
     if (program.init) {
-      createMapping(client)
-      .then(bulk)
-      .catch(function (err) {
-        console.error(colors.red('Failure for creating the mapping!\n', err));
+      putSettings(client)
+      .then(function () {
+        putMapping(client)
+        .then(bulk)
+        .catch(function (err) {
+          console.error(colors.red('Failure for creating the mapping!\n', err));
+        });
       })
+      .catch(function (err) {
+        console.error(colors.red('Failure for creating the settings!\n', err));
+      });
     } else {
       bulk();
     }
