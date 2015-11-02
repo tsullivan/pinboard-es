@@ -8,7 +8,6 @@ var program = require('commander');
 var colors = require('colors/safe');
 
 var updateCount = 25;
-var docType = 'pinboard-posts'
 
 program
   .version(thePackage.version)
@@ -31,8 +30,9 @@ if (_.isNull(indexSplit)) {
   ));
   process.exit();
 }
-var hostParam = indexSplit[1];
-var indexParam = indexSplit[3];
+var programHostUri = indexSplit[1];
+var programIndexName = indexSplit[3];
+var programTypeName = 'pinboard-posts'
 
 var uri = 'https://api.pinboard.in/v1/posts/';
 if (program.init) {
@@ -76,13 +76,13 @@ function createDocumentsBody(result) {
 function createClient() {
   return new elasticsearch.Client({
     apiVersion: '2.0',
-    host: hostParam // , log: 'trace'
+    host: programHostUri // , log: 'trace'
   });
 }
 
 function createMapping(client) {
   var mappingBody = {};
-  mappingBody[docType] = {
+  mappingBody[programTypeName] = {
     properties: {
       href: { type: 'string', index: 'not_analyzed' },
       time: { type: 'date' },
@@ -91,15 +91,15 @@ function createMapping(client) {
   };
   return client.indices.putMapping({
     index: '*',
-    type: docType,
+    type: programTypeName,
     body: mappingBody
   });
 }
 
 function bulkIndex(client, body) {
   return client.bulk({
-    index: indexParam,
-    type: docType,
+    index: programIndexName,
+    type: programTypeName,
     body: body
   });
 }
