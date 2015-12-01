@@ -81,9 +81,11 @@ function createClient() {
 }
 
 function putTemplate(client) {
+  var mapping = require('./mapping.json');
+  mapping.template = programIndexName + '*';
   return client.indices.putTemplate({
-    name: 'pinboard',
-    body: require('./pinboard_mapping.json')
+    name: programIndexName,
+    body: mapping
   });
 }
 
