@@ -32,7 +32,7 @@ if (_.isNull(indexSplit)) {
 }
 var programHostUri = indexSplit[1];
 var programIndexName = indexSplit[3];
-var programTypeName = 'pinboard-posts'
+var programTypeName = 'posts'
 
 var uri = 'https://api.pinboard.in/v1/posts/';
 if (program.init) {
@@ -75,34 +75,15 @@ function createDocumentsBody(result) {
 
 function createClient() {
   return new elasticsearch.Client({
-    apiVersion: '2.0',
+    apiVersion: '2.1',
     host: programHostUri // , log: 'trace'
   });
 }
 
-function putSettings(client) {
-  return client.indices.putSettings({
-    index: programIndexName,
-    "settings": {
-      "number_of_shards": 1,
-      "number_of_replicas": 0
-    }
-  });
-}
-
-function putMapping(client) {
-  var mappingBody = {};
-  mappingBody[programTypeName] = {
-    properties: {
-      href: { type: 'string', index: 'not_analyzed' },
-      time: { type: 'date' },
-      lastFetched: { type: 'date' }
-    }
-  };
-  return client.indices.putMapping({
-    index: '*',
-    type: programTypeName,
-    body: mappingBody
+function putTemplate(client) {
+  return client.indices.putTemplate({
+    name: 'pinboard',
+    body: require('./pinboard_mapping.json')
   });
 }
 
@@ -132,16 +113,10 @@ rp(options)
     }
 
     if (program.init) {
-      putSettings(client)
-      .then(function () {
-        putMapping(client)
-        .then(bulk)
-        .catch(function (err) {
-          console.error(colors.red('Failure for creating the mapping!\n', err));
-        });
-      })
+      putTemplate(client)
+      .then(bulk)
       .catch(function (err) {
-        console.error(colors.red('Failure for creating the settings!\n', err));
+        console.error(colors.red('Failure for creating the template!\n', err));
       });
     } else {
       bulk();
