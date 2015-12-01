@@ -9,10 +9,10 @@
   "author": "Timothy Sullivan",
   "license": "ISC",
   "dependencies": {
-    "bluebird": "^2.10.2",
+    "bluebird": "^3.0.5",
     "colors": "^1.1.2",
     "commander": "^2.9.0",
-    "elasticsearch": "^8.2.0",
+    "elasticsearch": "^10.0.1",
     "lodash": "^3.10.1",
     "request-promise": "^1.0.2",
     "xml2js": "^0.4.13"
