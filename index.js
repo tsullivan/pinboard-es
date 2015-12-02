@@ -1,4 +1,4 @@
-var thePackage = require('./package');
+var pkg = require('./package');
 var rp = require('request-promise')
 var _ = require('lodash')
 var Promise = require('bluebird');
@@ -10,7 +10,7 @@ var colors = require('colors/safe');
 var updateCount = 25;
 
 program
-  .version(thePackage.version)
+  .version(pkg.version)
   .option('--auth <auth>', 'Pinboard auth, e.g: <pinboardauthuser:pinboardauthtoken>')
   .option('--index <endpoint>', 'ES endpoint with index name, e.g: http://shielduser:shieldpass@localhost:9200/pinboard')
   .option('--init', 'Fetch all the pinboard posts')
@@ -59,12 +59,14 @@ function createDocumentsBody(result) {
     return doc.$;
   }).map(function (doc) {
     return {
+      id: doc.hash,
       href: doc.href,
       time: new Date(doc.time),
       description: doc.description,
       extended: doc.extended,
       tags: doc.tag.split(' '),
-      lastFetched: lastFetched
+      lastFetched: lastFetched,
+      toRead: doc.toread === 'yes'
     };
   });
 
