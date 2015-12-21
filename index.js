@@ -54,7 +54,6 @@ var options = {
 
 function createDocumentsBody(result) {
   // parse result body into docs
-  var lastFetched = new Date(result.posts.$.dt);
   var body = result.posts.post.map(function (doc) {
     return doc.$;
   }).map(function (doc) {
@@ -65,7 +64,6 @@ function createDocumentsBody(result) {
       description: doc.description,
       extended: doc.extended,
       tags: doc.tag.split(' '),
-      lastFetched: lastFetched,
       toRead: doc.toread === 'yes'
     };
   });
