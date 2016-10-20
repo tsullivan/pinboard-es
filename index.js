@@ -57,13 +57,14 @@ function createDocumentsBody(result) {
   var body = result.posts.post.map(function (doc) {
     return doc.$;
   }).map(function (doc) {
+    var tags = (doc.tag !== '') ? doc.tag.split(' ') : undefined;
     return {
       id: doc.hash,
       href: doc.href,
       time: new Date(doc.time),
       description: doc.description,
       extended: doc.extended,
-      tags: doc.tag.split(' '),
+      tags: tags,
       toRead: doc.toread === 'yes'
     };
   });
