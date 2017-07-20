@@ -76,7 +76,7 @@ function createDocumentsBody(result) {
 
 function createClient() {
   return new elasticsearch.Client({
-    apiVersion: '2.1',
+    apiVersion: 'master',
     host: programHostUri // , log: 'trace'
   });
 }
